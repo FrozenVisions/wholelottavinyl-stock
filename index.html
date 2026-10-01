@@ -16,7 +16,7 @@ header p{margin:4px 0 0;color:#cfcfcf;font-size:.9rem}
 .banner{background:#8a1c1c;color:#fff;text-align:center;padding:12px 16px;font-size:1.12rem;font-weight:600;line-height:1.4;border-bottom:3px solid #5e1111}
 .banner a{color:#fff;text-decoration:underline;text-underline-offset:3px;font-weight:800;white-space:nowrap}
 .banner a:hover,.banner a:focus{color:#ffe08a}
-@media (max-width:720px){.banner{font-size:1rem;padding:11px 12px}}
+@media (max-width:720px){.banner{font-size:1rem;padding:11px 12px}.controls select{flex:1 1 40%;min-width:0}.controls #msort{flex-basis:100%}}
 main{max-width:1200px;margin:0 auto;padding:14px}
 .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
 #q{flex:1 1 280px;padding:11px 12px;font-size:1rem;border:1px solid var(--line);border-radius:8px;background:var(--card)}
@@ -50,16 +50,17 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;padding:10px 0 24px}
 </style>
 </head>
 <body>
-<header><h1>WholelottaVinyl Stock List</h1><p><span id="total">7,965</span> second-hand vinyl records &middot; search by artist, title, catalogue number, grade or year</p></header>
+<header><h1>WholelottaVinyl Stock List</h1><p><span id="total">7,965</span> second-hand vinyl records &middot; search by artist, title, genre, catalogue number, grade or year</p></header>
 <div class="banner" id="buy">Buy from <a href="https://www.wholelottavinyl.com" target="_blank" rel="noopener">www.wholelottavinyl.com</a> or message me on Messenger</div>
 <main>
 <div class="controls">
- <input id="q" type="search" placeholder="Search artist, title, catalogue no., year…" autocomplete="off" aria-label="Search">
+ <input id="q" type="search" placeholder="Search artist, title, genre, catalogue no., year…" autocomplete="off" aria-label="Search">
  <select id="fmt" aria-label="Format"><option value="">All formats</option></select>
+ <select id="gen" aria-label="Genre"><option value="">All genres</option></select>
  <select id="msort" class="msort" aria-label="Sort">
   <option value="1,1">Sort: Artist A–Z</option><option value="2,1">Title A–Z</option>
   <option value="0,1">Price low–high</option><option value="0,-1">Price high–low</option>
-  <option value="6,-1">Year newest</option><option value="6,1">Year oldest</option>
+  <option value="7,-1">Year newest</option><option value="7,1">Year oldest</option>
  </select>
 </div>
 <div id="count" aria-live="polite"></div>
@@ -78,37 +79,41 @@ async function load(){const st=document.getElementById('count');st.textContent='
  const txt=await new Response(new Blob(bufs).stream().pipeThrough(new DecompressionStream('gzip'))).text();
  D=txt.split('\n').filter(Boolean).map(l=>{const r=l.split('\t');r[0]=parseFloat(r[0]);return r});
  init();}catch(e){st.textContent='Sorry, the stock list could not be loaded ('+e.message+'). Please refresh.'}}
-const COLS=['Price','Artist','Title','Format','Grade','Catalogue code','Year'];
-const CLS=['price','artist','title','meta','meta','meta','meta'];
+const COLS=['Price','Artist','Title','Format','Genre','Grade','Catalogue code','Year'];
+const CLS=['price','artist','title','meta','meta genre','meta','meta','meta'];
 const PER=100;
 const norm=s=>String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[‘’']/g,"'");
 const gbp=v=>'£'+v.toFixed(2);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const sortKey=s=>norm(s).replace(/^the\s+/,'');
-let state={q:'',fmt:'',col:1,dir:1,page:0},view=[];
+let state={q:'',fmt:'',gen:'',col:1,dir:1,page:0},view=[],G=[];
 const fsel=document.getElementById('fmt');
 function header(){document.getElementById('hdr').innerHTML=COLS.map((c,i)=>`<th data-i="${i}">${c} <span class="arr">${state.col===i?(state.dir>0?'▲':'▼'):''}</span></th>`).join('')}
 function cmp(a,b){const i=state.col;let x=D[a][i],y=D[b][i];
- if(i===0||i===6){x=x===''?null:+x;y=y===''?null:+y;if(x===null&&y===null)return 0;if(x===null)return 1;if(y===null)return -1;return (x-y)*state.dir||tie(a,b)}
+ if(i===0||i===7){x=x===''?null:+x;y=y===''?null:+y;if(x===null&&y===null)return 0;if(x===null)return 1;if(y===null)return -1;return (x-y)*state.dir||tie(a,b)}
  x=sortKey(x);y=sortKey(y);if(!x&&!y)return tie(a,b);if(!x)return 1;if(!y)return -1;return (x<y?-1:x>y?1:0)*state.dir||tie(a,b)}
 function tie(a,b){const k=i=>(sortKey(D[i][1])||'\uffff')+'\u0000'+sortKey(D[i][2]);const x=k(a),y=k(b);return x<y?-1:x>y?1:a-b}
 function apply(){const terms=norm(state.q).split(/\s+/).filter(Boolean);
- view=[];for(let i=0;i<D.length;i++){if(state.fmt&&D[i][3]!==state.fmt)continue;const s=IDX[i];if(terms.every(t=>s.includes(t)))view.push(i)}
+ view=[];for(let i=0;i<D.length;i++){if(state.fmt&&D[i][3]!==state.fmt)continue;if(state.gen&&!G[i].includes(state.gen))continue;const s=IDX[i];if(terms.every(t=>s.includes(t)))view.push(i)}
  view.sort(cmp);state.page=0;render()}
 function render(){header();const n=view.length,pages=Math.max(1,Math.ceil(n/PER));if(state.page>=pages)state.page=pages-1;
  const st=state.page*PER,sl=view.slice(st,st+PER);
  document.getElementById('count').textContent=n?`Showing ${(st+1).toLocaleString()}–${(st+sl.length).toLocaleString()} of ${n.toLocaleString()} records`:'No records match your search';
- document.getElementById('rows').innerHTML=sl.length?sl.map(i=>{const r=D[i];return '<tr>'+r.map((v,j)=>`<td class="${CLS[j]}" data-l="${COLS[j]}">${j===0?gbp(v):esc(v)}</td>`).join('')+'</tr>'}).join(''):'<tr><td colspan="7" class="empty">No records found.</td></tr>';
+ document.getElementById('rows').innerHTML=sl.length?sl.map(i=>{const r=D[i];return '<tr>'+r.map((v,j)=>`<td class="${CLS[j]}" data-l="${COLS[j]}">${j===0?gbp(v):esc(v)}</td>`).join('')+'</tr>'}).join(''):'<tr><td colspan="8" class="empty">No records found.</td></tr>';
  document.getElementById('pg').textContent=`Page ${state.page+1} of ${pages}`;
  document.getElementById('prev').disabled=state.page===0;document.getElementById('next').disabled=state.page>=pages-1}
 let t;document.getElementById('q').addEventListener('input',e=>{clearTimeout(t);t=setTimeout(()=>{state.q=e.target.value;apply()},120)});
 fsel.addEventListener('change',e=>{state.fmt=e.target.value;apply()});
-document.getElementById('hdr').addEventListener('click',e=>{const th=e.target.closest('th');if(!th)return;const i=+th.dataset.i;if(state.col===i)state.dir=-state.dir;else{state.col=i;state.dir=(i===0||i===6)?1:1}view.sort(cmp);state.page=0;render()});
+document.getElementById('gen').addEventListener('change',e=>{state.gen=e.target.value;apply()});
+document.getElementById('hdr').addEventListener('click',e=>{const th=e.target.closest('th');if(!th)return;const i=+th.dataset.i;if(state.col===i)state.dir=-state.dir;else{state.col=i;state.dir=1}view.sort(cmp);state.page=0;render()});
 document.getElementById('msort').addEventListener('change',e=>{const [c,d]=e.target.value.split(',').map(Number);state.col=c;state.dir=d;view.sort(cmp);state.page=0;render()});
 document.getElementById('prev').onclick=()=>{state.page--;render();window.scrollTo(0,0)};
 document.getElementById('next').onclick=()=>{state.page++;render();window.scrollTo(0,0)};
 function init(){IDX=D.map(r=>norm(r.slice(1).join(' ')+' £'+r[0].toFixed(2)));
  [...new Set(D.map(r=>r[3]).filter(Boolean))].sort().forEach(f=>{const o=document.createElement('option');o.value=f;o.textContent=f;fsel.appendChild(o)});
+ const GRE=/Folk, World, & Country|Funk \/ Soul|Stage & Screen|Brass & Military|Hip Hop|Non-Music|Children's|[A-Z][a-z]+/g;
+ G=D.map(r=>r[4]?(r[4].match(GRE)||[]):[]);const gc={};G.forEach(a=>a.forEach(g=>gc[g]=(gc[g]||0)+1));
+ const gsel=document.getElementById('gen');Object.keys(gc).sort().forEach(g=>{const o=document.createElement('option');o.value=g;o.textContent=g+' ('+gc[g].toLocaleString('en-GB')+')';gsel.appendChild(o)});
  document.getElementById('total').textContent=D.length.toLocaleString('en-GB');apply()}
 load();
 </script>
