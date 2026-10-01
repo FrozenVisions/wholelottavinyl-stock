@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WholelottaVinyl Stock List</title>
+<meta name="description" content="Searchable stock list of second-hand vinyl records from WholelottaVinyl.">
+<style>
+.msort{display:none}
+:root{--bg:#f6f5f2;--card:#fff;--ink:#1d1d1f;--muted:#6b6b70;--line:#e3e1dc;--accent:#8a1c1c;--head:#222}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+header{background:var(--head);color:#fff;padding:18px 16px}
+header h1{margin:0;font-size:1.5rem;letter-spacing:.3px}
+header p{margin:4px 0 0;color:#cfcfcf;font-size:.9rem}
+main{max-width:1200px;margin:0 auto;padding:14px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+#q{flex:1 1 280px;padding:11px 12px;font-size:1rem;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+select{padding:10px;font-size:1rem;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+#count{color:var(--muted);font-size:.9rem;margin:6px 2px 10px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#efede8;cursor:pointer;user-select:none;white-space:nowrap;font-size:.85rem;text-transform:uppercase;letter-spacing:.4px;color:#444}
+th:hover{background:#e6e3dc}
+th .arr{color:var(--accent);font-size:.8rem}
+td.price{font-weight:600;white-space:nowrap;color:var(--accent)}
+tbody tr:nth-child(even){background:#fbfaf8}
+.pager{display:flex;gap:8px;align-items:center;justify-content:center;margin:14px 0;flex-wrap:wrap}
+.pager button{padding:8px 14px;border:1px solid var(--line);background:var(--card);border-radius:8px;font-size:.95rem;cursor:pointer}
+.pager button:disabled{opacity:.4;cursor:default}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:10px 0 24px}
+@media (max-width:720px){
+ thead{display:none}
+ table,tbody,tr,td{display:block;width:100%}
+ table{border:none;background:transparent}
+ tr{background:var(--card)!important;border:1px solid var(--line);border-radius:8px;margin-bottom:10px;padding:8px 10px}
+ td{border:none;padding:2px 0}
+ td.artist{font-weight:700;font-size:1.02rem}
+ td.title{font-size:.98rem}
+ td.meta{color:var(--muted);font-size:.85rem}
+ td[data-l]:not(.artist):not(.title):not(.price)::before{content:attr(data-l) ": ";color:var(--muted)}
+ .msort{display:block}
+ td:empty{display:none}
+}
+</style>
+</head>
+<body>
+<header><h1>WholelottaVinyl Stock List</h1><p><span id="total">7,965</span> second-hand vinyl records &middot; search by artist, title, catalogue number, grade or year</p></header>
+<main>
+<div class="controls">
+ <input id="q" type="search" placeholder="Search artist, title, catalogue no., year…" autocomplete="off" aria-label="Search">
+ <select id="fmt" aria-label="Format"><option value="">All formats</option></select>
+ <select id="msort" class="msort" aria-label="Sort">
+  <option value="1,1">Sort: Artist A–Z</option><option value="2,1">Title A–Z</option>
+  <option value="0,1">Price low–high</option><option value="0,-1">Price high–low</option>
+  <option value="6,-1">Year newest</option><option value="6,1">Year oldest</option>
+ </select>
+</div>
+<div id="count" aria-live="polite"></div>
+<table>
+ <thead><tr id="hdr"></tr></thead>
+ <tbody id="rows"></tbody>
+</table>
+<div class="pager"><button id="prev">&larr; Prev</button><span id="pg"></span><button id="next">Next &rarr;</button></div>
+<footer>Grades shown as media/sleeve (e.g. VG+/VG). Prices in GBP.</footer>
+</main>
+<script>
+let D=[],IDX=[];
+async function load(){const st=document.getElementById('count');st.textContent='Loading stock…';
+ try{const m=await (await fetch('data/manifest.json?t='+Date.now(),{cache:'no-store'})).json();
+ const bufs=await Promise.all(Array.from({length:m.parts},(_,i)=>fetch('data/part'+i+'.bin?v='+m.v).then(r=>{if(!r.ok)throw new Error('part'+i+' '+r.status);return r.arrayBuffer()})));
+ const txt=await new Response(new Blob(bufs).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+ D=txt.split('\n').filter(Boolean).map(l=>{const r=l.split('\t');r[0]=parseFloat(r[0]);return r});
+ init();}catch(e){st.textContent='Sorry, the stock list could not be loaded ('+e.message+'). Please refresh.'}}
+const COLS=['Price','Artist','Title','Format','Grade','Catalogue code','Year'];
+const CLS=['price','artist','title','meta','meta','meta','meta'];
+const PER=100;
+const norm=s=>String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[‘’']/g,"'");
+const gbp=v=>'£'+v.toFixed(2);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sortKey=s=>norm(s).replace(/^the\s+/,'');
+let state={q:'',fmt:'',col:1,dir:1,page:0},view=[];
+const fsel=document.getElementById('fmt');
+function header(){document.getElementById('hdr').innerHTML=COLS.map((c,i)=>`<th data-i="${i}">${c} <span class="arr">${state.col===i?(state.dir>0?'▲':'▼'):''}</span></th>`).join('')}
+function cmp(a,b){const i=state.col;let x=D[a][i],y=D[b][i];
+ if(i===0||i===6){x=x===''?null:+x;y=y===''?null:+y;if(x===null&&y===null)return 0;if(x===null)return 1;if(y===null)return -1;return (x-y)*state.dir||tie(a,b)}
+ x=sortKey(x);y=sortKey(y);if(!x&&!y)return tie(a,b);if(!x)return 1;if(!y)return -1;return (x<y?-1:x>y?1:0)*state.dir||tie(a,b)}
+function tie(a,b){const k=i=>(sortKey(D[i][1])||'\uffff')+'\u0000'+sortKey(D[i][2]);const x=k(a),y=k(b);return x<y?-1:x>y?1:a-b}
+function apply(){const terms=norm(state.q).split(/\s+/).filter(Boolean);
+ view=[];for(let i=0;i<D.length;i++){if(state.fmt&&D[i][3]!==state.fmt)continue;const s=IDX[i];if(terms.every(t=>s.includes(t)))view.push(i)}
+ view.sort(cmp);state.page=0;render()}
+function render(){header();const n=view.length,pages=Math.max(1,Math.ceil(n/PER));if(state.page>=pages)state.page=pages-1;
+ const st=state.page*PER,sl=view.slice(st,st+PER);
+ document.getElementById('count').textContent=n?`Showing ${(st+1).toLocaleString()}–${(st+sl.length).toLocaleString()} of ${n.toLocaleString()} records`:'No records match your search';
+ document.getElementById('rows').innerHTML=sl.length?sl.map(i=>{const r=D[i];return '<tr>'+r.map((v,j)=>`<td class="${CLS[j]}" data-l="${COLS[j]}">${j===0?gbp(v):esc(v)}</td>`).join('')+'</tr>'}).join(''):'<tr><td colspan="7" class="empty">No records found.</td></tr>';
+ document.getElementById('pg').textContent=`Page ${state.page+1} of ${pages}`;
+ document.getElementById('prev').disabled=state.page===0;document.getElementById('next').disabled=state.page>=pages-1}
+let t;document.getElementById('q').addEventListener('input',e=>{clearTimeout(t);t=setTimeout(()=>{state.q=e.target.value;apply()},120)});
+fsel.addEventListener('change',e=>{state.fmt=e.target.value;apply()});
+document.getElementById('hdr').addEventListener('click',e=>{const th=e.target.closest('th');if(!th)return;const i=+th.dataset.i;if(state.col===i)state.dir=-state.dir;else{state.col=i;state.dir=(i===0||i===6)?1:1}view.sort(cmp);state.page=0;render()});
+document.getElementById('msort').addEventListener('change',e=>{const [c,d]=e.target.value.split(',').map(Number);state.col=c;state.dir=d;view.sort(cmp);state.page=0;render()});
+document.getElementById('prev').onclick=()=>{state.page--;render();window.scrollTo(0,0)};
+document.getElementById('next').onclick=()=>{state.page++;render();window.scrollTo(0,0)};
+function init(){IDX=D.map(r=>norm(r.slice(1).join(' ')+' £'+r[0].toFixed(2)));
+ [...new Set(D.map(r=>r[3]).filter(Boolean))].sort().forEach(f=>{const o=document.createElement('option');o.value=f;o.textContent=f;fsel.appendChild(o)});
+ document.getElementById('total').textContent=D.length.toLocaleString('en-GB');apply()}
+load();
+</script>
+</body>
+</html>
