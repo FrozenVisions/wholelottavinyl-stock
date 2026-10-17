@@ -4,117 +4,345 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WholelottaVinyl Stock List</title>
-<meta name="description" content="Searchable stock list of second-hand vinyl records from WholelottaVinyl.">
+<meta name="description" content="Search the WholelottaVinyl crate: hand-graded second-hand vinyl, with prices in pounds.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-.msort{display:none}
-:root{--bg:#f6f5f2;--card:#fff;--ink:#1d1d1f;--muted:#6b6b70;--line:#e3e1dc;--accent:#8a1c1c;--head:#222}
+:root{
+  --cream:oklch(95.7% .018 80);
+  --card:oklch(98.5% .012 80);
+  --ink:oklch(18% .015 50);
+  --muted:oklch(42% .03 50);
+  --line:oklch(86% .025 65);
+  --brick:oklch(52% .12 45);
+  --sienna:oklch(34% .07 42);
+  --gold:oklch(78% .13 85);
+  --chip:oklch(93% .02 75);
+  --shadow:0 10px 30px oklch(30% .03 50 / .08);
+  --serif:"Instrument Serif", Georgia, "Times New Roman", serif;
+  --sans:"Work Sans", "Segoe UI", sans-serif;
+}
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
-header{background:var(--head);color:#fff;padding:18px 16px}
-header h1{margin:0;font-size:1.5rem;letter-spacing:.3px}
-header p{margin:4px 0 0;color:#cfcfcf;font-size:.9rem}
-.banner{background:#8a1c1c;color:#fff;text-align:center;padding:12px 16px;font-size:1.12rem;font-weight:600;line-height:1.4;border-bottom:3px solid #5e1111}
-.banner a{color:#fff;text-decoration:underline;text-underline-offset:3px;font-weight:800;white-space:nowrap}
-.banner a:hover,.banner a:focus{color:#ffe08a}
-@media (max-width:720px){.banner{font-size:1rem;padding:11px 12px}.controls select{flex:1 1 40%;min-width:0}.controls #msort{flex-basis:100%}}
-main{max-width:1200px;margin:0 auto;padding:14px}
-.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
-#q{flex:1 1 280px;padding:11px 12px;font-size:1rem;border:1px solid var(--line);border-radius:8px;background:var(--card)}
-select{padding:10px;font-size:1rem;border:1px solid var(--line);border-radius:8px;background:var(--card)}
-#count{color:var(--muted);font-size:.9rem;margin:6px 2px 10px}
-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
-th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
-th{background:#efede8;cursor:pointer;user-select:none;white-space:nowrap;font-size:.85rem;text-transform:uppercase;letter-spacing:.4px;color:#444}
-th:hover{background:#e6e3dc}
-th .arr{color:var(--accent);font-size:.8rem}
-td.price{font-weight:600;white-space:nowrap;color:var(--accent)}
-tbody tr:nth-child(even){background:#fbfaf8}
-.pager{display:flex;gap:8px;align-items:center;justify-content:center;margin:14px 0;flex-wrap:wrap}
-.pager button{padding:8px 14px;border:1px solid var(--line);background:var(--card);border-radius:8px;font-size:.95rem;cursor:pointer}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.45}
+a{color:var(--brick)}
+button,input,select{font:inherit;color:inherit}
+.skip{position:absolute;left:12px;top:-40px;background:var(--gold);color:var(--ink);padding:8px 12px;z-index:5}
+.skip:focus{top:12px}
+
+.mast{background:var(--sienna);color:var(--cream);padding:28px 20px 22px;border-bottom:4px solid var(--gold)}
+.mast-inner{max-width:1120px;margin:0 auto;display:flex;gap:22px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap}
+.word{margin:0;font-family:var(--serif);font-weight:400;font-size:clamp(2.4rem,5vw,3.6rem);letter-spacing:-.03em;line-height:.95}
+.word em{font-style:italic;color:var(--gold)}
+.lede{margin:8px 0 0;max-width:38rem;color:oklch(93% .02 80);font-size:.98rem}
+.lede strong{color:#fff;font-weight:600}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 14px;border-radius:999px;text-decoration:none;font-weight:600;font-size:.92rem;border:1px solid transparent}
+.btn.primary{background:var(--gold);color:var(--ink)}
+.btn.primary:hover,.btn.primary:focus{background:#fff}
+.btn.ghost{background:transparent;color:var(--cream);border-color:oklch(93% .02 80 / .45)}
+.btn.ghost:hover,.btn.ghost:focus{background:oklch(100% 0 0 / .08);color:#fff}
+
+.wrap{max-width:1120px;margin:0 auto;padding:16px 16px 40px}
+.toolbar{position:sticky;top:0;z-index:3;background:color-mix(in oklab, var(--cream) 92%, white);backdrop-filter:blur(8px);padding:12px 0 10px;border-bottom:1px solid transparent}
+.toolbar.stuck{border-bottom-color:var(--line)}
+.find{display:flex;gap:8px}
+#q{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px;box-shadow:var(--shadow)}
+#q:focus{outline:2px solid var(--brick);outline-offset:1px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip,.clear{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;cursor:pointer;font-size:.86rem;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--sienna);color:var(--cream);border-color:var(--sienna)}
+.chip:hover,.clear:hover{border-color:var(--brick)}
+select{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-size:.9rem}
+.clear{color:var(--brick)}
+.clear[hidden]{display:none}
+.status{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin:14px 2px 10px;color:var(--muted);font-size:.92rem}
+.status b{color:var(--ink);font-weight:600}
+
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:11px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{background:oklch(93.5% .02 78);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:var(--ink)}
+th .arr{color:var(--brick);font-size:.75rem}
+tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:oklch(96.5% .02 82)}
+.price{font-weight:700;color:var(--brick);white-space:nowrap;font-variant-numeric:tabular-nums}
+.artist{font-family:var(--serif);font-size:1.12rem;line-height:1.15}
+.as{background:none;border:0;padding:0;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.as:hover,.as:focus{color:var(--brick);text-decoration:underline}
+.title{font-weight:600}
+.shop{display:block;margin-top:4px;font-size:.78rem;font-weight:600;text-decoration:none;letter-spacing:.01em}
+.shop:hover,.shop:focus{text-decoration:underline}
+.cat{font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.genre,.year,.fmt,.grade{color:var(--muted);font-size:.92rem}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.pager{display:flex;gap:10px;align-items:center;justify-content:center;margin:16px 0 8px}
+.pager button{min-height:44px;padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-weight:600}
 .pager button:disabled{opacity:.4;cursor:default}
-.empty{padding:30px;text-align:center;color:var(--muted)}
-footer{text-align:center;color:var(--muted);font-size:.8rem;padding:10px 0 24px}
-@media (max-width:720px){
- thead{display:none}
- table,tbody,tr,td{display:block;width:100%}
- table{border:none;background:transparent}
- tr{background:var(--card)!important;border:1px solid var(--line);border-radius:8px;margin-bottom:10px;padding:8px 10px}
- td{border:none;padding:2px 0}
- td.artist{font-weight:700;font-size:1.02rem}
- td.title{font-size:.98rem}
- td.meta{color:var(--muted);font-size:.85rem}
- td[data-l]:not(.artist):not(.title):not(.price)::before{content:attr(data-l) ": ";color:var(--muted)}
- .msort{display:block}
- td:empty{display:none}
+.pager button:not(:disabled):hover{border-color:var(--brick)}
+#pg{color:var(--muted);font-size:.92rem;min-width:8rem;text-align:center}
+footer{color:var(--muted);font-size:.82rem;padding:8px 4px 0}
+footer a{font-weight:600}
+
+@media (max-width:760px){
+  .mast{padding:22px 16px 18px}
+  thead{display:none}
+  table,tbody,tr,td{display:block;width:100%}
+  .sheet{background:transparent;border:0;box-shadow:none;overflow:visible}
+  tbody tr{background:var(--card);border:1px solid var(--line);border-radius:16px;margin:0 0 10px;padding:12px 14px 10px;box-shadow:var(--shadow)}
+  tbody tr:hover td{background:transparent}
+  td{border:0;padding:1px 0}
+  td.price{font-size:1.05rem}
+  td.artist{font-size:1.35rem;margin-top:2px}
+  td.title{font-size:1.02rem;margin-bottom:4px}
+  td.meta::before{content:attr(data-l) ": ";color:var(--muted);font-weight:600}
+  td.fmt,td.grade,td.cat,td.year,td.genre{font-size:.88rem}
+  td:empty{display:none}
+  .shop{margin-top:8px;font-size:.86rem}
 }
 </style>
 </head>
 <body>
-<header><h1>WholelottaVinyl Stock List</h1><p><span id="total">8,004</span> second-hand vinyl records &middot; search by artist, title, genre, catalogue number, grade or year</p></header>
-<div class="banner" id="buy">Buy from <a href="https://www.wholelottavinyl.com" target="_blank" rel="noopener">www.wholelottavinyl.com</a> or message me on Messenger</div>
-<main>
-<div class="controls">
- <input id="q" type="search" placeholder="Search artist, title, genre, catalogue no., year…" autocomplete="off" aria-label="Search">
- <select id="fmt" aria-label="Format"><option value="">All formats</option></select>
- <select id="gen" aria-label="Genre"><option value="">All genres</option></select>
- <select id="msort" class="msort" aria-label="Sort">
-  <option value="1,1">Sort: Artist A–Z</option><option value="2,1">Title A–Z</option>
-  <option value="0,1">Price low–high</option><option value="0,-1">Price high–low</option>
-  <option value="7,-1">Year newest</option><option value="7,1">Year oldest</option>
- </select>
-</div>
-<div id="count" aria-live="polite"></div>
-<table>
- <thead><tr id="hdr"></tr></thead>
- <tbody id="rows"></tbody>
-</table>
-<div class="pager"><button id="prev">&larr; Prev</button><span id="pg"></span><button id="next">Next &rarr;</button></div>
-<footer>Grades shown as media/sleeve (e.g. VG+/VG). Prices in GBP.</footer>
+<a class="skip" href="#rows">Skip to the records</a>
+<header class="mast">
+  <div class="mast-inner">
+    <div>
+      <h1 class="word">Wholelotta<em>Vinyl</em></h1>
+      <p class="lede"><strong id="total">…</strong> hand-graded records in the crate. Search by artist, title, genre, catalogue number or year.</p>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="https://www.wholelottavinyl.com" target="_blank" rel="noopener">Buy on the website</a>
+      <a class="btn ghost" href="https://www.wholelottavinyl.com/contact" target="_blank" rel="noopener">Contact the shop</a>
+    </div>
+  </div>
+</header>
+<main class="wrap">
+  <div class="toolbar" id="toolbar">
+    <form class="find" id="find" role="search">
+      <input id="q" type="search" placeholder="Try 10cc, Bloody Tourists, or a catalogue number" autocomplete="off" aria-label="Search the stock list" enterkeyhint="search">
+    </form>
+    <div class="filters">
+      <div class="chips" id="formats" role="group" aria-label="Common formats"></div>
+      <select id="fmt" aria-label="Format"><option value="">All formats</option></select>
+      <select id="gen" aria-label="Genre"><option value="">All genres</option></select>
+      <select id="sort" aria-label="Sort">
+        <option value="1,1">Artist A–Z</option>
+        <option value="2,1">Title A–Z</option>
+        <option value="0,1">Price, low to high</option>
+        <option value="0,-1">Price, high to low</option>
+        <option value="7,-1">Year, newest</option>
+        <option value="7,1">Year, oldest</option>
+        <option value="5,1">Grade</option>
+        <option value="6,1">Catalogue number</option>
+        <option value="" hidden>Column sort</option>
+      </select>
+      <button type="button" class="clear" id="clear" hidden>Clear</button>
+    </div>
+  </div>
+  <div class="status"><span id="count" aria-live="polite">Loading the crate…</span></div>
+  <div class="sheet">
+    <table>
+      <thead><tr id="hdr"></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <div class="pager">
+    <button type="button" id="prev">Previous</button>
+    <span id="pg"></span>
+    <button type="button" id="next">Next</button>
+  </div>
+  <footer>Grades are media/sleeve, for example VG+/VG. Prices are in pounds. <a href="https://www.wholelottavinyl.com" target="_blank" rel="noopener">wholelottavinyl.com</a></footer>
 </main>
 <script>
-let D=[],IDX=[];
-async function load(){const st=document.getElementById('count');st.textContent='Loading stock…';
- try{const m=await (await fetch('data/manifest.json?t='+Date.now(),{cache:'no-store'})).json();
- const bufs=await Promise.all(Array.from({length:m.parts},(_,i)=>fetch('data/part'+i+'.bin?v='+m.v).then(r=>{if(!r.ok)throw new Error('part'+i+' '+r.status);return r.arrayBuffer()})));
- const txt=await new Response(new Blob(bufs).stream().pipeThrough(new DecompressionStream('gzip'))).text();
- D=txt.split('\n').filter(Boolean).map(l=>{const r=l.split('\t');r[0]=parseFloat(r[0]);return r});
- init();}catch(e){st.textContent='Sorry, the stock list could not be loaded ('+e.message+'). Please refresh.'}}
+let D=[], IDX=[], G=[];
 const COLS=['Price','Artist','Title','Format','Genre','Grade','Catalogue code','Year'];
-const CLS=['price','artist','title','meta','meta genre','meta','meta','meta'];
-const PER=100;
+const PER=50;
 const norm=s=>String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[‘’']/g,"'");
-const gbp=v=>'£'+v.toFixed(2);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const sortKey=s=>norm(s).replace(/^the\s+/,'');
-let state={q:'',fmt:'',gen:'',col:1,dir:1,page:0},view=[],G=[];
-const fsel=document.getElementById('fmt');
-function header(){document.getElementById('hdr').innerHTML=COLS.map((c,i)=>`<th data-i="${i}">${c} <span class="arr">${state.col===i?(state.dir>0?'▲':'▼'):''}</span></th>`).join('')}
-function cmp(a,b){const i=state.col;let x=D[a][i],y=D[b][i];
- if(i===0||i===7){x=x===''?null:+x;y=y===''?null:+y;if(x===null&&y===null)return 0;if(x===null)return 1;if(y===null)return -1;return (x-y)*state.dir||tie(a,b)}
- x=sortKey(x);y=sortKey(y);if(!x&&!y)return tie(a,b);if(!x)return 1;if(!y)return -1;return (x<y?-1:x>y?1:0)*state.dir||tie(a,b)}
-function tie(a,b){const k=i=>(sortKey(D[i][1])||'\uffff')+'\u0000'+sortKey(D[i][2]);const x=k(a),y=k(b);return x<y?-1:x>y?1:a-b}
-function apply(){const terms=norm(state.q).split(/\s+/).filter(Boolean);
- view=[];for(let i=0;i<D.length;i++){if(state.fmt&&D[i][3]!==state.fmt)continue;if(state.gen&&!G[i].includes(state.gen))continue;const s=IDX[i];if(terms.every(t=>s.includes(t)))view.push(i)}
- view.sort(cmp);state.page=0;render()}
-function render(){header();const n=view.length,pages=Math.max(1,Math.ceil(n/PER));if(state.page>=pages)state.page=pages-1;
- const st=state.page*PER,sl=view.slice(st,st+PER);
- document.getElementById('count').textContent=n?`Showing ${(st+1).toLocaleString()}–${(st+sl.length).toLocaleString()} of ${n.toLocaleString()} records`:'No records match your search';
- document.getElementById('rows').innerHTML=sl.length?sl.map(i=>{const r=D[i];return '<tr>'+r.map((v,j)=>`<td class="${CLS[j]}" data-l="${COLS[j]}">${j===0?gbp(v):esc(v)}</td>`).join('')+'</tr>'}).join(''):'<tr><td colspan="8" class="empty">No records found.</td></tr>';
- document.getElementById('pg').textContent=`Page ${state.page+1} of ${pages}`;
- document.getElementById('prev').disabled=state.page===0;document.getElementById('next').disabled=state.page>=pages-1}
-let t;document.getElementById('q').addEventListener('input',e=>{clearTimeout(t);t=setTimeout(()=>{state.q=e.target.value;apply()},120)});
-fsel.addEventListener('change',e=>{state.fmt=e.target.value;apply()});
-document.getElementById('gen').addEventListener('change',e=>{state.gen=e.target.value;apply()});
-document.getElementById('hdr').addEventListener('click',e=>{const th=e.target.closest('th');if(!th)return;const i=+th.dataset.i;if(state.col===i)state.dir=-state.dir;else{state.col=i;state.dir=1}view.sort(cmp);state.page=0;render()});
-document.getElementById('msort').addEventListener('change',e=>{const [c,d]=e.target.value.split(',').map(Number);state.col=c;state.dir=d;view.sort(cmp);state.page=0;render()});
-document.getElementById('prev').onclick=()=>{state.page--;render();window.scrollTo(0,0)};
-document.getElementById('next').onclick=()=>{state.page++;render();window.scrollTo(0,0)};
-function init(){IDX=D.map(r=>norm(r.slice(1).join(' ')+' £'+r[0].toFixed(2)));
- [...new Set(D.map(r=>r[3]).filter(Boolean))].sort().forEach(f=>{const o=document.createElement('option');o.value=f;o.textContent=f;fsel.appendChild(o)});
- const GRE=/Folk, World, & Country|Funk \/ Soul|Stage & Screen|Brass & Military|Hip Hop|Non-Music|Children's|[A-Z][a-z]+/g;
- G=D.map(r=>r[4]?(r[4].match(GRE)||[]):[]);const gc={};G.forEach(a=>a.forEach(g=>gc[g]=(gc[g]||0)+1));
- const gsel=document.getElementById('gen');Object.keys(gc).sort().forEach(g=>{const o=document.createElement('option');o.value=g;o.textContent=g+' ('+gc[g].toLocaleString('en-GB')+')';gsel.appendChild(o)});
- document.getElementById('total').textContent=D.length.toLocaleString('en-GB');apply()}
+const gbp=v=>Number.isFinite(v)?'£'+v.toFixed(2):'';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shopHref=r=>{
+  const q=[r[1],r[2]].filter(Boolean).join(' ').trim();
+  return 'https://www.wholelottavinyl.com/vinyl-records?q='+encodeURIComponent(q);
+};
+let state={q:'',fmt:'',gen:'',col:1,dir:1,page:0}, view=[];
+const qEl=document.getElementById('q');
+const fmtEl=document.getElementById('fmt');
+const genEl=document.getElementById('gen');
+const sortEl=document.getElementById('sort');
+const clearEl=document.getElementById('clear');
+const formatsEl=document.getElementById('formats');
+
+function readUrl(){
+  const p=new URLSearchParams(location.search);
+  state.q=p.get('q')||'';
+  state.fmt=p.get('fmt')||'';
+  state.gen=p.get('gen')||'';
+  const col=p.get('col'), dir=p.get('dir'), page=p.get('page');
+  if(col!==null && dir!==null && Number.isFinite(+col) && Number.isFinite(+dir)){state.col=+col;state.dir=+dir||1}
+  state.page=page?Math.max(0,(+page||1)-1):0;
+}
+function writeUrl(){
+  const p=new URLSearchParams();
+  if(state.q)p.set('q',state.q);
+  if(state.fmt)p.set('fmt',state.fmt);
+  if(state.gen)p.set('gen',state.gen);
+  if(!(state.col===1 && state.dir===1)){p.set('col',state.col);p.set('dir',state.dir)}
+  if(state.page)p.set('page',state.page+1);
+  const next=p.toString();
+  const url=next?location.pathname+'?'+next:location.pathname;
+  if(url!==location.pathname+location.search)history.replaceState(null,'',url);
+}
+function header(){
+  document.getElementById('hdr').innerHTML=COLS.map((c,i)=>{
+    const on=state.col===i;
+    const arrow=on?(state.dir>0?'↑':'↓'):'';
+    const sortAttr=on?(state.dir>0?'ascending':'descending'):'none';
+    return `<th data-i="${i}" aria-sort="${sortAttr}">${c} <span class="arr">${arrow}</span></th>`;
+  }).join('');
+}
+function cmp(a,b){
+  const i=state.col; let x=D[a][i], y=D[b][i];
+  if(i===0||i===7){
+    x=x===''?null:+x; y=y===''?null:+y;
+    if(x===null&&y===null)return 0; if(x===null)return 1; if(y===null)return -1;
+    return (x-y)*state.dir||tie(a,b);
+  }
+  x=sortKey(x); y=sortKey(y);
+  if(!x&&!y)return tie(a,b); if(!x)return 1; if(!y)return -1;
+  return (x<y?-1:x>y?1:0)*state.dir||tie(a,b);
+}
+function tie(a,b){
+  const k=i=>(sortKey(D[i][1])||'\uffff')+'\u0000'+sortKey(D[i][2]);
+  const x=k(a), y=k(b); return x<y?-1:x>y?1:a-b;
+}
+function syncSort(){
+  const v=state.col+','+state.dir;
+  sortEl.value=[...sortEl.options].some(o=>o.value===v)?v:'';
+}
+function paintFormats(){
+  formatsEl.querySelectorAll('.chip').forEach(btn=>{
+    btn.setAttribute('aria-pressed', (btn.dataset.fmt||'')===state.fmt ? 'true' : 'false');
+  });
+  fmtEl.value=[...fmtEl.options].some(o=>o.value===state.fmt)?state.fmt:'';
+}
+function filtered(){
+  return Boolean(state.q||state.fmt||state.gen||!(state.col===1&&state.dir===1));
+}
+function apply(resetPage){
+  const terms=norm(state.q).split(/\s+/).filter(Boolean);
+  view=[];
+  for(let i=0;i<D.length;i++){
+    if(state.fmt&&D[i][3]!==state.fmt)continue;
+    if(state.gen&&!G[i].includes(state.gen))continue;
+    if(terms.every(t=>IDX[i].includes(t)))view.push(i);
+  }
+  view.sort(cmp);
+  if(resetPage)state.page=0;
+  render();
+  writeUrl();
+}
+function render(){
+  header(); syncSort(); paintFormats();
+  clearEl.hidden=!filtered();
+  const n=view.length, pages=Math.max(1,Math.ceil(n/PER)||1);
+  if(state.page>=pages)state.page=pages-1;
+  if(state.page<0)state.page=0;
+  const start=state.page*PER, slice=view.slice(start,start+PER);
+  const noun=n===1?'record':'records';
+  const narrowed=Boolean(state.q||state.fmt||state.gen);
+  document.getElementById('count').innerHTML=n
+    ? `<b>${n.toLocaleString('en-GB')}</b> ${noun}`+(narrowed?' match':' in the crate')+` · showing ${(start+1).toLocaleString('en-GB')}–${(start+slice.length).toLocaleString('en-GB')}`
+    : 'No records match. Try a shorter search, or clear the filters.';
+  document.getElementById('rows').innerHTML=slice.length?slice.map(i=>{
+    const r=D[i];
+    const artist=r[1]?`<button type="button" class="as" data-artist="${esc(r[1])}">${esc(r[1])}</button>`:'';
+    const title=`${esc(r[2])}<a class="shop" href="${shopHref(r)}" target="_blank" rel="noopener">Find in shop</a>`;
+    const cells=[gbp(r[0]), artist, title, esc(r[3]), esc(r[4]), esc(r[5]), esc(r[6]), esc(r[7])];
+    const cls=['price','artist','title','meta fmt','meta genre','meta grade','meta cat','meta year'];
+    return '<tr>'+cells.map((v,j)=>`<td class="${cls[j]}" data-l="${esc(COLS[j])}">${v}</td>`).join('')+'</tr>';
+  }).join(''):'<tr><td class="empty" colspan="8">Nothing in the crate matches that.</td></tr>';
+  document.getElementById('pg').textContent=n?`Page ${state.page+1} of ${pages}`:'';
+  document.getElementById('prev').disabled=!n||state.page===0;
+  document.getElementById('next').disabled=!n||state.page>=pages-1;
+}
+let timer;
+qEl.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>{state.q=qEl.value;apply(true)},120)});
+document.getElementById('find').addEventListener('submit',e=>{e.preventDefault();state.q=qEl.value;apply(true)});
+formatsEl.addEventListener('click',e=>{
+  const btn=e.target.closest('.chip'); if(!btn)return;
+  state.fmt=btn.dataset.fmt||''; apply(true);
+});
+fmtEl.addEventListener('change',()=>{state.fmt=fmtEl.value;apply(true)});
+genEl.addEventListener('change',()=>{state.gen=genEl.value;apply(true)});
+sortEl.addEventListener('change',()=>{
+  const [c,d]=sortEl.value.split(',').map(Number);
+  state.col=c; state.dir=d; view.sort(cmp); state.page=0; render(); writeUrl();
+});
+document.getElementById('hdr').addEventListener('click',e=>{
+  const th=e.target.closest('th'); if(!th)return;
+  const i=+th.dataset.i;
+  if(state.col===i)state.dir=-state.dir; else {state.col=i;state.dir=1}
+  view.sort(cmp); state.page=0; render(); writeUrl();
+});
+document.getElementById('rows').addEventListener('click',e=>{
+  const btn=e.target.closest('.as'); if(!btn)return;
+  state.q=btn.dataset.artist; qEl.value=state.q; apply(true);
+  qEl.focus();
+});
+clearEl.addEventListener('click',()=>{
+  state={q:'',fmt:'',gen:'',col:1,dir:1,page:0};
+  qEl.value=''; fmtEl.value=''; genEl.value=''; apply(true);
+});
+function turn(delta){
+  state.page+=delta; render(); writeUrl();
+  document.getElementById('toolbar').scrollIntoView({block:'start'});
+}
+document.getElementById('prev').onclick=()=>turn(-1);
+document.getElementById('next').onclick=()=>turn(1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='/' && document.activeElement!==qEl){e.preventDefault();qEl.focus()}
+  if(e.key==='Escape' && document.activeElement===qEl && qEl.value){qEl.value='';state.q='';apply(true)}
+});
+addEventListener('scroll',()=>{document.getElementById('toolbar').classList.toggle('stuck', scrollY>160)},{passive:true});
+
+async function load(){
+  const st=document.getElementById('count');
+  st.textContent='Loading the crate…';
+  try{
+    const m=await (await fetch('data/manifest.json?t='+Date.now(),{cache:'no-store'})).json();
+    const bufs=await Promise.all(Array.from({length:m.parts},(_,i)=>fetch('data/part'+i+'.bin?v='+m.v).then(r=>{if(!r.ok)throw new Error('part '+i+' failed');return r.arrayBuffer()})));
+    const txt=await new Response(new Blob(bufs).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+    D=txt.split('\n').filter(Boolean).map(l=>{const r=l.split('\t');r[0]=parseFloat(r[0]);return r});
+    init();
+  }catch(e){
+    st.textContent='The stock list could not be loaded ('+e.message+'). Please refresh.';
+  }
+}
+function init(){
+  IDX=D.map(r=>norm(r.slice(1).join(' ')+' £'+r[0].toFixed(2)));
+  const formats=[...new Set(D.map(r=>r[3]).filter(Boolean))].sort((a,b)=>sortKey(a)<sortKey(b)?-1:1);
+  const quick=['7"','12"','LP','2LP'].filter(f=>formats.includes(f));
+  formatsEl.innerHTML='<button type="button" class="chip" data-fmt="">All</button>'+quick.map(f=>`<button type="button" class="chip" data-fmt="${esc(f)}">${esc(f)}</button>`).join('');
+  formats.forEach(f=>{const o=document.createElement('option');o.value=f;o.textContent=f;fmtEl.appendChild(o)});
+  const GRE=/Folk, World, & Country|Funk \/ Soul|Stage & Screen|Brass & Military|Hip Hop|Non-Music|Children's|[A-Z][a-z]+/g;
+  G=D.map(r=>r[4]?(r[4].match(GRE)||[]):[]);
+  const gc={}; G.forEach(a=>a.forEach(g=>gc[g]=(gc[g]||0)+1));
+  Object.keys(gc).sort().forEach(g=>{
+    const o=document.createElement('option');
+    o.value=g; o.textContent=g+' ('+gc[g].toLocaleString('en-GB')+')';
+    genEl.appendChild(o);
+  });
+  document.getElementById('total').textContent=D.length.toLocaleString('en-GB');
+  readUrl();
+  qEl.value=state.q;
+  if([...genEl.options].some(o=>o.value===state.gen))genEl.value=state.gen; else state.gen='';
+  if(state.fmt && !formats.includes(state.fmt))state.fmt='';
+  apply(false);
+}
 load();
 </script>
 </body>
