@@ -314,7 +314,7 @@ async function load(){
   st.textContent='Loading the crate…';
   try{
     const m=await (await fetch('data/manifest.json?t='+Date.now(),{cache:'no-store'})).json();
-    const bufs=await Promise.all(Array.from({length:m.parts},(_,i)=>fetch('data/part'+i+'.bin?v='+m.v).then(r=>{if(!r.ok)throw new Error('part '+i+' failed');return r.arrayBuffer()})));
+    const bufs=await Promise.all(Array.from({length:m.parts},(_,i)=>fetch('data/part'+i+'.'+m.v+'.bin',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('part '+i+' failed');return r.arrayBuffer()})));
     const txt=await new Response(new Blob(bufs).stream().pipeThrough(new DecompressionStream('gzip'))).text();
     D=txt.split('\n').filter(Boolean).map(l=>{const r=l.split('\t');r[0]=parseFloat(r[0]);return r});
     init();
